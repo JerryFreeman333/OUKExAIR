@@ -1,12 +1,14 @@
 /* ============================================================
-   数据层 · 空白社区 + 本地持久化
-   初始不包含任何成员、活动或作品，所有内容由使用者自行登记。
+   数据层 · 社区初始档案 + 本地持久化
+   从 turing-community-demo.html 接入 8 位成员与 6 件作品。
    数据只保存在浏览器 localStorage，不上传。
    ============================================================ */
 window.TD = (function () {
   'use strict';
 
-  const STORAGE_KEY = 'turing-community-screen-v3';
+  const CURRENT_VERSION = 4;
+  const STORAGE_KEY = 'turing-community-screen-v4';
+  const LEGACY_STORAGE_KEYS = ['turing-community-screen-v3'];
 
   const LEVELS = [
     { n: 1, key: 'egg',    name: '奶蛋',       en: 'MILK EGG',    min: 0,  rule: '活跃指数 0–11 · 完成首次打卡', tone: '#f6e3a8', accent: '#b49a5c' },
@@ -24,11 +26,233 @@ window.TD = (function () {
     ['#2d1b27', '#f472b6'], ['#232a33', '#c7d4e8']
   ];
 
+  const MEMBER_SEED = [
+    {
+      id: 0,
+      importKey: 'turing-demo-member-0',
+      name: '陈墨',
+      en: 'CHEN MO',
+      role: 'AI 研究创作者',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e7f4ff', '#174eac'],
+      photo: null,
+      joined: -1,
+      importedActivity: 96,
+      sourceProfile: { level: 'LV.08 · 共创者', participation: 128, listedWorks: 8, trend: '↗ 12', accessory: 'orbit' }
+    },
+    {
+      id: 1,
+      importKey: 'turing-demo-member-1',
+      name: '林夕',
+      en: 'YUKI LIN',
+      role: '医工交叉探索者',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e6f9ff', '#176b93'],
+      photo: null,
+      joined: -1,
+      importedActivity: 92,
+      sourceProfile: { level: 'LV.07 · 造梦者', participation: 116, listedWorks: 6, trend: '↗ 08', accessory: 'antenna' }
+    },
+    {
+      id: 2,
+      importKey: 'turing-demo-member-2',
+      name: '周舟',
+      en: 'ZHOU ZHOU',
+      role: '数字孪生工程师',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#edf0ff', '#2f4d9d'],
+      photo: null,
+      joined: -1,
+      importedActivity: 88,
+      sourceProfile: { level: 'LV.07 · 造梦者', participation: 124, listedWorks: 5, trend: '↗ 05', accessory: 'ring' }
+    },
+    {
+      id: 3,
+      importKey: 'turing-demo-member-3',
+      name: '阿策',
+      en: 'ACE WU',
+      role: '具身智能开发者',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e8f7ff', '#24567a'],
+      photo: null,
+      joined: -1,
+      importedActivity: 84,
+      sourceProfile: { level: 'LV.06 · 探索者', participation: 98, listedWorks: 7, trend: '↗ 03', accessory: 'bolt' }
+    },
+    {
+      id: 4,
+      importKey: 'turing-demo-member-4',
+      name: '苏禾',
+      en: 'SU HE',
+      role: '数字视觉研究者',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e4f3ff', '#37668d'],
+      photo: null,
+      joined: -1,
+      importedActivity: 79,
+      sourceProfile: { level: 'LV.06 · 探索者', participation: 106, listedWorks: 9, trend: '↗ 06', accessory: 'antenna' }
+    },
+    {
+      id: 5,
+      importKey: 'turing-demo-member-5',
+      name: '何一',
+      en: 'HE YI',
+      role: '全栈研究工程师',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e8ecff', '#3a4e86'],
+      photo: null,
+      joined: -1,
+      importedActivity: 74,
+      sourceProfile: { level: 'LV.05 · 行动派', participation: 88, listedWorks: 4, trend: '— 00', accessory: 'ring' }
+    },
+    {
+      id: 6,
+      importKey: 'turing-demo-member-6',
+      name: '许星',
+      en: 'XU XING',
+      role: '空间计算探索者',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#ecf5ff', '#396775'],
+      photo: null,
+      joined: -1,
+      importedActivity: 68,
+      sourceProfile: { level: 'LV.05 · 行动派', participation: 76, listedWorks: 3, trend: '↗ 02', accessory: 'orbit' }
+    },
+    {
+      id: 7,
+      importKey: 'turing-demo-member-7',
+      name: '陆离',
+      en: 'LU LI',
+      role: '人机交互设计师',
+      org: '温州市图灵人工智能高等研究院',
+      att: '',
+      tagline: '在研究与真实需求的交汇处持续探索。',
+      colors: ['#e6f0ff', '#2e557b'],
+      photo: null,
+      joined: -1,
+      importedActivity: 63,
+      sourceProfile: { level: 'LV.04 · 新同频', participation: 54, listedWorks: 4, trend: '↗ 04', accessory: 'bolt' }
+    }
+  ];
+
+  const WORK_SEED = [
+    {
+      id: 0,
+      importKey: 'turing-demo-work-0',
+      title: 'MEDICAL VISION',
+      cn: '医影智析',
+      author: 0,
+      co: [],
+      theme: '医学影像',
+      type: 'AI',
+      year: 2026,
+      likes: 0,
+      motif: 0,
+      desc: '面向医学影像智能分析与临床应用的概念项目。通过可解释的视觉模型与交互界面，辅助研究者观察复杂影像，让算法成为医生的另一种感知。',
+      tags: ['AI', '3D', '医学研究'],
+      programType: 'AI × MEDICAL RESEARCH'
+    },
+    {
+      id: 1,
+      importKey: 'turing-demo-work-1',
+      title: 'INDUSTRY TRANSLATOR',
+      cn: 'AI 行业翻译官',
+      author: 1,
+      co: [],
+      theme: '产业服务',
+      type: 'WEB',
+      year: 2026,
+      likes: 0,
+      motif: 1,
+      desc: '把企业的真实问题转译为可执行的 AI 任务，连接产业需求、技术团队与研究成果，让更多创新从对话走向落地。',
+      tags: ['WEB', 'VISUAL', '产业服务'],
+      programType: 'AI × INDUSTRY SERVICE'
+    },
+    {
+      id: 2,
+      importKey: 'turing-demo-work-2',
+      title: 'CITY DIGITAL TWIN',
+      cn: '城市数字孪生',
+      author: 2,
+      co: [],
+      theme: '空间计算',
+      type: '3D',
+      year: 2026,
+      likes: 0,
+      motif: 2,
+      desc: '以实时数据与三维空间为纽带，构建可观察、可推演的城市数字镜像，探索城市治理与公共服务的全新交互方式。',
+      tags: ['3D', 'WEB', '数字孪生'],
+      programType: 'SPATIAL COMPUTING'
+    },
+    {
+      id: 3,
+      importKey: 'turing-demo-work-3',
+      title: 'OUYUE ARCHIVE',
+      cn: '瓯越视觉档案',
+      author: 3,
+      co: [],
+      theme: '文化设计',
+      type: 'VISUAL',
+      year: 2026,
+      likes: 0,
+      motif: 3,
+      desc: '以数字设计重新整理瓯越文化线索，用网格、色彩与生成视觉建立一座可持续生长的城市文化档案。',
+      tags: ['VISUAL', '瓯越文化', '数字档案'],
+      programType: 'CULTURE × DIGITAL DESIGN'
+    },
+    {
+      id: 4,
+      importKey: 'turing-demo-work-4',
+      title: 'CAMPUS NETWORK',
+      cn: '高校共创网络',
+      author: 4,
+      co: [],
+      theme: '高校共创',
+      type: 'AI',
+      year: 2026,
+      likes: 0,
+      motif: 5,
+      desc: '把在温高校的研究方向、创作者与项目连接成可生长的协作网络，让跨学科合作拥有更清晰的入口。',
+      tags: ['AI', '3D', '高校共创'],
+      programType: 'UNIVERSITY COLLABORATION'
+    },
+    {
+      id: 5,
+      importKey: 'turing-demo-work-5',
+      title: 'HUMANOID LAB',
+      cn: '具身智能实验室',
+      author: 5,
+      co: [],
+      theme: '人机交互',
+      type: 'WEB',
+      year: 2026,
+      likes: 0,
+      motif: 4,
+      desc: '一个具身智能交互概念实验。通过动作、反馈与动态界面，探索人和智能体之间更自然、更直观的沟通方式。',
+      tags: ['WEB', 'VISUAL', '具身智能'],
+      programType: 'HUMAN × ROBOT INTERACTION'
+    }
+  ];
+
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
 
   function emptyState() {
     return {
-      version: 3,
+      version: CURRENT_VERSION,
       members: [],
       events: [],
       works: []
@@ -36,14 +260,19 @@ window.TD = (function () {
   }
 
   function seed() {
-    return emptyState();
+    return clone({
+      version: CURRENT_VERSION,
+      members: MEMBER_SEED,
+      events: [],
+      works: WORK_SEED
+    });
   }
 
   let data = null;
 
   function normalize(raw) {
     const next = emptyState();
-    if (!raw || raw.version !== 3) return next;
+    if (!raw || ![3, CURRENT_VERSION].includes(Number(raw.version))) return next;
     next.members = Array.isArray(raw.members) ? raw.members : [];
     next.events = Array.isArray(raw.events) ? raw.events : [];
     next.works = Array.isArray(raw.works) ? raw.works : [];
@@ -59,19 +288,58 @@ window.TD = (function () {
     return next;
   }
 
+  function mergeSeed(raw) {
+    const next = normalize({ ...raw, version: CURRENT_VERSION });
+    const memberIdMap = new Map();
+
+    MEMBER_SEED.forEach(seedMember => {
+      let existing = next.members.find(member => member.importKey === seedMember.importKey);
+      if (!existing) {
+        const nextMemberId = next.members.reduce((max, member) => Math.max(max, Number(member.id) || 0), -1) + 1;
+        existing = { ...clone(seedMember), id: nextMemberId };
+        next.members.push(existing);
+      }
+      memberIdMap.set(seedMember.id, existing.id);
+    });
+
+    WORK_SEED.forEach(seedWork => {
+      if (next.works.some(work => work.importKey === seedWork.importKey)) return;
+      const nextWorkId = next.works.reduce((max, work) => Math.max(max, Number(work.id) || 0), -1) + 1;
+      next.works.push({
+        ...clone(seedWork),
+        id: nextWorkId,
+        author: memberIdMap.get(seedWork.author) ?? null,
+        co: seedWork.co.map(id => memberIdMap.get(id)).filter(Number.isFinite)
+      });
+    });
+
+    return next;
+  }
+
   function load() {
     if (data) return data;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
-        if (parsed && parsed.version === 3) {
+        if (parsed && Number(parsed.version) === CURRENT_VERSION) {
           data = normalize(parsed);
           return data;
         }
       }
+      for (const key of LEGACY_STORAGE_KEYS) {
+        const legacyRaw = localStorage.getItem(key);
+        if (!legacyRaw) continue;
+        const legacy = JSON.parse(legacyRaw);
+        if (legacy && Number(legacy.version) === 3) {
+          data = mergeSeed(legacy);
+          save();
+          return data;
+        }
+      }
     } catch (error) { /* ignore corrupt storage */ }
-    data = emptyState();
+    data = seed();
+    save();
     return data;
   }
 
@@ -85,8 +353,11 @@ window.TD = (function () {
   }
 
   function reset() {
-    data = emptyState();
-    try { localStorage.removeItem(STORAGE_KEY); } catch (error) { /* ignore */ }
+    data = seed();
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      LEGACY_STORAGE_KEYS.forEach(key => localStorage.removeItem(key));
+    } catch (error) { /* ignore */ }
     return data;
   }
 
@@ -222,7 +493,9 @@ window.TD = (function () {
     const attendScore = Math.min(58, weighted / EVENT_WEIGHT_BASE * 58);
     const workScore = Math.min(workCount(member.id), 6) / 6 * 26;
     const streakScore = Math.min(streak(member), 8) / 8 * 16;
-    return Math.round(attendScore + workScore + streakScore);
+    const calculated = Math.round(attendScore + workScore + streakScore);
+    const importedBaseline = Math.min(100, Math.max(0, Number(member.importedActivity) || 0));
+    return Math.max(calculated, importedBaseline);
   }
 
   function levelOf(memberScore) {

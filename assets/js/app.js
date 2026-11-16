@@ -1789,8 +1789,8 @@
     });
     items.push({
       group: 'SYSTEM / 系统',
-      label: '清空本机数据',
-      hint: '删除全部成员、活动与头像',
+      label: '恢复初始数据',
+      hint: '载入 8 位成员与 6 件作品',
       icon: '#i-reset',
       danger: true,
       run: () => { closeCommand(); resetData(); }
@@ -1861,7 +1861,7 @@
   }
 
   function resetData() {
-    if (!window.confirm('清空本机全部数据？成员、活动、打卡与头像都会被删除。')) return;
+    if (!window.confirm('恢复初始数据？本机新增的成员、活动、打卡、作品与头像都会被替换。')) return;
     TD.reset();
     state.members.focus = null;
     state.members.level = null;
@@ -1872,7 +1872,7 @@
     state.screen.index = 0;
     closeModal();
     closeCheckin();
-    toast('本机数据已清空，屏幕回到待机状态');
+    toast('本机数据已恢复为初始成员与作品');
     refreshCurrentView();
     if (state.view === 'overview') startStageTimer();
   }
